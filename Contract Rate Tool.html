@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT Contract Rate Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;padding:1.5rem 1rem}
+.wrap{max-width:820px;margin:0 auto}
+h1{font-size:20px;font-weight:500;margin-bottom:.2rem}
+.subtitle{font-size:13px;color:#6b6b67;margin-bottom:1.5rem}
+.st{font-size:11px;font-weight:500;color:#6b6b67;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:.5px solid rgba(0,0,0,.12)}
+.pcard{background:#fff;border:.5px solid rgba(0,0,0,.1);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem}
+.cr{display:flex;align-items:center;gap:10px;margin-bottom:.8rem;flex-wrap:wrap}
+.cl{font-size:13px;color:#6b6b67;min-width:175px}
+.cv{font-size:13px;font-weight:500;min-width:80px;text-align:right}
+input[type=range]{flex:1;min-width:120px;accent-color:#1a1a18;cursor:pointer}
+.hint{font-size:11px;color:#9a9a96;margin-top:-.35rem;margin-bottom:.8rem;padding-left:175px;line-height:1.5}
+.prem-wrap{flex:1;min-width:120px;position:relative}
+.prem-wrap input[type=range]{width:100%}
+.tick-track{position:relative;height:28px;margin-top:2px}
+.tick{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.tick-line{width:1.5px;height:6px;background:#ccc;margin-bottom:1px;transition:background .1s}
+.tick-lbl{font-size:8.5px;color:#aaa;text-align:center;line-height:1.2;max-width:56px;transition:color .1s}
+.tick.active .tick-line{background:#1a1a18}
+.tick.active .tick-lbl{color:#1a1a18;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:1.25rem;margin-top:.25rem}
+.card{background:#f5f4f0;border-radius:8px;padding:.8rem .9rem}
+.card-lbl{font-size:11px;color:#6b6b67;margin-bottom:3px}
+.card-val{font-size:19px;font-weight:500}
+.card-sub{font-size:11px;color:#9a9a96;margin-top:2px}
+.ok{color:#16a34a}.warn{color:#d97706}.bad{color:#dc2626}
+.tabs{display:flex;border-bottom:.5px solid rgba(0,0,0,.12);overflow-x:auto;background:#fff;border-radius:10px 10px 0 0;padding:0 .5rem}
+.tab{padding:.5rem 1rem;border:none;background:none;font-size:13px;cursor:pointer;color:#6b6b67;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:500}
+.tc{background:#fff;border:.5px solid rgba(0,0,0,.1);border-top:none;border-radius:0 0 10px 10px;padding:1.25rem}
+.panel{display:none}.panel.active{display:block}
+.tr-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem}
+.tbtn{padding:.28rem .62rem;font-size:12px;border:.5px solid rgba(0,0,0,.18);border-radius:7px;cursor:pointer;background:#fff;color:#6b6b67;font-family:inherit}
+.tbtn:hover{background:#f5f4f0}
+.tbtn.active{color:#1a1a18;border-color:#1a1a18;font-weight:500;background:#f5f4f0}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:.75rem}
+.sc{background:#fff;border:.5px solid rgba(0,0,0,.12);border-radius:10px;padding:.9rem}
+.sc.rec{border:2px solid #16a34a}
+.sc-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-bottom:.4rem;background:#dcfce7;color:#15803d}
+.sc-ttl{font-size:13px;font-weight:500;margin-bottom:.5rem}
+.sr{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:#6b6b67}
+.sr span:last-child{color:#1a1a18;font-weight:500}
+.sr.dim span:last-child{color:#9a9a96}
+.sdiv{border-top:.5px solid rgba(0,0,0,.1);margin:.4rem 0}
+.snet{font-size:15px;font-weight:500;text-align:right;margin-top:.35rem}
+.snet-sub{font-size:11px;color:#9a9a96;text-align:right;margin-top:2px}
+.rstrip{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;border-radius:7px;margin-top:.5rem;gap:8px;flex-wrap:wrap}
+.rstrip.ok{background:#dcfce7}.rstrip.warn{background:#fef3c7}.rstrip.bad{background:#fee2e2}
+.rstrip .rl{font-size:12px;font-weight:500}
+.rstrip.ok .rl{color:#15803d}.rstrip.warn .rl{color:#92400e}.rstrip.bad .rl{color:#991b1b}
+.rstrip .rs{font-size:11px;opacity:.85}
+.rstrip.ok .rs{color:#166534}.rstrip.warn .rs{color:#92400e}.rstrip.bad .rs{color:#991b1b}
+.rstrip .rm{font-size:17px;font-weight:500;white-space:nowrap}
+.rstrip.ok .rm{color:#16a34a}.rstrip.warn .rm{color:#d97706}.rstrip.bad .rm{color:#dc2626}
+.yeblk{margin-top:.6rem;padding:.5rem .65rem;background:#f5f4f0;border-radius:7px;border-left:3px solid #c8c7c0}
+.yelbl{font-size:10px;font-weight:500;color:#9a9a96;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.yer{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;color:#6b6b67}
+.yer span:last-child{color:#16a34a;font-weight:500}
+.yet{display:flex;justify-content:space-between;font-size:12px;font-weight:500;padding-top:.3rem;margin-top:.3rem;border-top:.5px solid rgba(0,0,0,.1)}
+.yet span{color:#6b6b67}.yet span:last-child{color:#16a34a}
+.vbox{padding:.8rem .9rem;border-radius:8px;font-size:13px;line-height:1.6;margin-bottom:.75rem}
+.vbox.ok{background:#dcfce7;color:#15803d}
+.vbox.warn{background:#fef3c7;color:#92400e}
+.vbox.bad{background:#fee2e2;color:#991b1b}
+.vbox.info{background:#dbeafe;color:#1d4ed8}
+.vbox.neutral{background:#f5f4f0;color:#5f5e5a}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:1rem}
+.plan-card{background:#fff;border:.5px solid rgba(0,0,0,.12);border-radius:10px;padding:.9rem;cursor:pointer;transition:border-color .15s}
+.plan-card:hover{border-color:#888}
+.plan-card.selected{border:2px solid #1a1a18}
+.plan-tier{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;margin-bottom:.4rem}
+.tier-bronze{background:#fef3c7;color:#92400e}
+.tier-silver{background:#f1f5f9;color:#334155}
+.tier-gold{background:#fefce8;color:#713f12}
+.tier-medicaid{background:#dcfce7;color:#15803d}
+.plan-name{font-size:13px;font-weight:500;margin-bottom:.35rem;color:#1a1a18}
+.plan-prem{font-size:18px;font-weight:500;margin-bottom:.25rem}
+.plan-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:#6b6b67}
+.plan-row span:last-child{color:#1a1a18}
+.plan-note{font-size:11px;color:#6b6b67;margin-top:.35rem;line-height:1.5}
+.plan-select-btn{width:100%;margin-top:.6rem;padding:.35rem;font-size:12px;border:.5px solid rgba(0,0,0,.2);border-radius:6px;cursor:pointer;background:#f5f4f0;font-family:inherit;font-weight:500;transition:all .15s}
+.plan-select-btn:hover{background:#e5e5e0}
+.plan-card.selected .plan-select-btn{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.subsidy-badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:3px;background:#dbeafe;color:#1d4ed8}
+.band-row{display:flex;align-items:stretch;margin-bottom:6px;border-radius:8px;overflow:hidden;border:.5px solid rgba(0,0,0,.1)}
+.band-sw{width:6px;flex-shrink:0}
+.band-body{flex:1;padding:.55rem .8rem;background:#fff}
+.band-ttl{font-size:13px;font-weight:500;color:#1a1a18}
+.band-sub{font-size:12px;color:#6b6b67;line-height:1.5;margin-top:2px}
+.ntable{width:100%;border-collapse:collapse;font-size:12px}
+.ntable th{text-align:left;padding:.35rem .5rem;font-size:11px;font-weight:500;color:#6b6b67;border-bottom:.5px solid rgba(0,0,0,.12)}
+.ntable td{padding:.4rem .5rem;border-bottom:.5px solid rgba(0,0,0,.08);color:#1a1a18}
+.ntable tr:last-child td{border-bottom:none}
+.pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500}
+.pill.good{background:#dcfce7;color:#15803d}
+.pill.warn{background:#fef3c7;color:#92400e}
+.pill.bad{background:#fee2e2;color:#991b1b}
+.mini-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:.75rem}
+.mini-card{background:#f5f4f0;border-radius:8px;padding:.7rem .85rem}
+.mini-lbl{font-size:11px;color:#6b6b67;margin-bottom:2px}
+.mini-val{font-size:17px;font-weight:500;color:#1a1a18}
+.mini-sub{font-size:11px;color:#9a9a96;margin-top:2px}
+.note{font-size:11px;color:#9a9a96;line-height:1.55;margin-top:.75rem}
+footer{text-align:center;font-size:11px;color:#9a9a96;margin-top:2rem;padding-top:1rem;border-top:.5px solid rgba(0,0,0,.08)}
+@media(max-width:520px){.cl{min-width:100%;margin-bottom:2px}.hint{padding-left:0}.cv{min-width:60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>CT Contract Rate Analyzer</h1>
+<p class="subtitle">Connecticut · 2026 · W2 vs. 1099 · AH CT plan costs for your family (ages 61, 54, 14) · Runway calculator</p>
+
+<div class="pcard">
+  <div class="st">Your situation</div>
+  <div class="cr">
+    <span class="cl">Monthly budget floor</span>
+    <input type="range" min="4000" max="12000" step="500" value="6000" id="budget">
+    <span class="cv" id="budget-out">$6,000</span>
+  </div>
+  <div class="cr">
+    <span class="cl">Runway remaining</span>
+    <input type="range" min="5000" max="100000" step="1000" value="32000" id="runway">
+    <span class="cv" id="runway-out">$32,000</span>
+  </div>
+  <div class="cr">
+    <span class="cl">Billing days/month</span>
+    <input type="range" min="8" max="22" step="1" value="15" id="billdays">
+    <span class="cv" id="billdays-out">15 days</span>
+  </div>
+  <div class="cr" style="align-items:flex-start">
+    <span class="cl" style="padding-top:6px">Health premium/mo</span>
+    <div class="prem-wrap">
+      <input type="range" min="0" max="4500" step="25" value="0" id="premium">
+      <div class="tick-track" id="tick-track"></div>
+    </div>
+    <span class="cv" id="premium-out">$0</span>
+  </div>
+  <div class="hint">Drag freely or click a tick mark to snap to an AH CT plan premium. $0 = Medicaid. See the AH CT Plans tab for full plan details and subsidy-adjusted premiums at your income.</div>
+  <div id="sel-badge" style="font-size:12px;color:#1d4ed8;margin-bottom:.75rem;min-height:16px"></div>
+  <div id="top-cards" class="cards"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('scenarios')">Rate scenarios</button>
+  <button class="tab" onclick="switchTab('health')">AH CT plans &amp; subsidies</button>
+  <button class="tab" onclick="switchTab('negotiate')">Negotiation guide</button>
+</div>
+<div class="tc">
+  <div id="panel-scenarios" class="panel active">
+    <div class="st">What you take home — and what comes back later</div>
+    <div class="tr-row" id="rate-toggles"></div>
+    <div id="scenario-out"></div>
+  </div>
+  <div id="panel-health" class="panel"><div id="health-out"></div></div>
+  <div id="panel-negotiate" class="panel"><div id="negotiate-out"></div></div>
+</div>
+
+<footer>CT Contract Rate Analyzer · 2026 tax brackets &amp; CMS age rating · Not tax or legal advice · Estimates only<br>
+Verify at <a href="https://accesshealthct.com" target="_blank">accesshealthct.com</a> · 1-855-805-4325 · Consult a CPA for your situation</footer>
+</div>
+
+<script>
+const FPL2=21150;
+const CT7=[[10000,.02],[40000,.045],[100000,.055],[200000,.06],[250000,.065],[500000,.069],[Infinity,.0699]];
+const FED7=[[11925,.10],[48475,.12],[103350,.22],[197300,.24],[250525,.32],[626350,.35],[Infinity,.37]];
+const STD=15000;
+function ctTax(i){let t=0,p=0;for(const[top,r]of CT7){if(i<=p)break;t+=(Math.min(i,top)-p)*r;p=top;}return t;}
+function fedTax(a){const ti=Math.max(0,a-STD);let t=0,p=0;for(const[top,r]of FED7){if(ti<=p)break;t+=(Math.min(ti,top)-p)*r;p=top;}return t;}
+function calcW2(ann){const f=ann*.0765,fed=fedTax(ann),ct=ctTax(ann);return{fica:f,fed,ct,net:ann-f-fed-ct};}
+function calc1099(ann,hAnn){
+  const se=ann*.9235*.153,agi=Math.max(0,ann-se*.5),fed=fedTax(agi),ct=ctTax(agi),net=ann-se-fed-ct;
+  const mf=ann<48475?.12:ann<103350?.22:ann<197300?.24:.32,mc=ann<10000?.02:ann<40000?.045:ann<100000?.055:.06,m=mf+mc;
+  return{se,fed,ct,net_cash:net,se_s:(se*.5)*m,h_s:(hAnn||0)*m,ye:(se*.5)*m+(hAnn||0)*m};
+}
+
+// CMS federal age multipliers (piecewise linear)
+function ageMul(age){
+  if(age<=20)return .635;
+  if(age<=21)return 1.000;
+  if(age<=25)return 1.000+(age-21)*.001;
+  if(age<=30)return 1.004+(age-25)*.0032;
+  if(age<=35)return 1.020+(age-30)*.008;
+  if(age<=40)return 1.060+(age-35)*.0436;
+  if(age<=45)return 1.278+(age-40)*.0314;
+  if(age<=50)return 1.435+(age-45)*.0658;
+  if(age<=55)return 1.764+(age-50)*.044;
+  if(age<=60)return 1.984+(age-55)*.0794;
+  if(age<=64)return 2.381+(age-60)*.15475;
+  return 3.000;
+}
+const MUL40=1.278;
+function sp(base40,age){return Math.round(base40*(ageMul(age)/MUL40));}
+
+// 2026 CT unsubsidized base premiums for age 40 (per member)
+const B={
+  anthBrHmo:602,anthBrPpo:639,anthSilPpo:729,anthGldHmo:774,anthGldPpo:988,
+  ccBr:664,ccSil:864,ccSilHsa:985,ccGld:1007
+};
+const AGES={you:61,wife:54,kid:14};
+
+function buildPlans(){
+  const {you,wife,kid}=AGES;
+  const pl=[
+    {id:'medicaid',tier:'medicaid',car:'Husky A / Covered CT',nm:'Medicaid / Covered CT',
+     py:0,pw:0,pk:0,ded:0,oop:0,
+     note:'$0 premium, $0 deductible, $0 copays while income-eligible. See subsidy bands below for thresholds.'},
+    {id:'anth_br_hmo',tier:'bronze',car:'Anthem',nm:'Bronze HMO',
+     py:sp(B.anthBrHmo,you),pw:sp(B.anthBrHmo,wife),pk:sp(B.anthBrHmo,kid),ded:7000,oop:9200,
+     note:'Lowest premium. Referrals required, in-network only. High deductible means biologics/psych meds likely mostly out-of-pocket until deductible met.'},
+    {id:'anth_br_ppo',tier:'bronze',car:'Anthem',nm:'Bronze PPO / HSA',
+     py:sp(B.anthBrPpo,you),pw:sp(B.anthBrPpo,wife),pk:sp(B.anthBrPpo,kid),ded:6250,oop:9200,
+     note:'HSA-eligible. Out-of-network access. Slightly higher than HMO Bronze but HSA contributions reduce taxable income. Same deductible concern for biologics.'},
+    {id:'cc_br',tier:'bronze',car:'ConnectiCare',nm:'Bronze POS',
+     py:sp(B.ccBr,you),pw:sp(B.ccBr,wife),pk:sp(B.ccBr,kid),ded:7000,oop:9200,
+     note:'POS — specialist access without referrals. Includes adult vision. $50 PCP copay before deductible. Still a high deductible for high-utilization family.'},
+    {id:'anth_sil_ppo',tier:'silver',car:'Anthem',nm:'Silver PPO',
+     py:sp(B.anthSilPpo,you),pw:sp(B.anthSilPpo,wife),pk:sp(B.anthSilPpo,kid),ded:5000,oop:8773,
+     note:'Only Silver PPO from Anthem. Required tier to access CSR — at qualifying income, deductible can drop to ~$500. Out-of-network access.'},
+    {id:'cc_sil',tier:'silver',car:'ConnectiCare',nm:'Silver POS',
+     py:sp(B.ccSil,you),pw:sp(B.ccSil,wife),pk:sp(B.ccSil,kid),ded:5000,oop:9200,
+     note:'POS Silver with specialist access, adult dental + vision. CSR-eligible. Good balance of premium and coverage for a family with ongoing prescription needs.'},
+    {id:'cc_sil_hsa',tier:'silver',car:'ConnectiCare',nm:'Silver HSA POS',
+     py:sp(B.ccSilHsa,you),pw:sp(B.ccSilHsa,wife),pk:sp(B.ccSilHsa,kid),ded:3000,oop:6900,
+     note:'HSA-eligible Silver POS. Higher premium than standard Silver but lower deductible and HSA tax benefit offsets some cost. Dental + vision included.'},
+    {id:'anth_gld_hmo',tier:'gold',car:'Anthem',nm:'Gold HMO',
+     py:sp(B.anthGldHmo,you),pw:sp(B.anthGldHmo,wife),pk:sp(B.anthGldHmo,kid),ded:2000,oop:6000,
+     note:'Low deductible, predictable costs. Best for high-utilization families. Referrals required. Given wife\'s biologic + psych prescriptions, Gold may be most cost-effective overall.'},
+    {id:'cc_gld',tier:'gold',car:'ConnectiCare',nm:'Gold POS',
+     py:sp(B.ccGld,you),pw:sp(B.ccGld,wife),pk:sp(B.ccGld,kid),ded:1500,oop:6500,
+     note:'Highest premium, lowest OOP exposure. No referrals. Adult dental + vision. Given wife\'s medication load, this tier likely minimizes total annual spend despite the premium.'},
+  ];
+  pl.forEach(p=>p.fam=p.py+p.pw+p.pk);
+  return pl;
+}
+const PLANS=buildPlans();
+let selPlanId=null;
+
+function applySubsidy(gross,ann){
+  const pct=ann/FPL2*100;
+  if(ann<=0||pct<=138)return{net:0,lbl:'Husky A / Medicaid'};
+  if(pct<=175)return{net:0,lbl:'Covered CT ($0)'};
+  if(pct<=200)return{net:Math.max(0,gross-Math.max(0,gross-100)),lbl:'APTC + CT full replacement'};
+  if(pct<=250){const s=.72;return{net:Math.round(gross*(1-s)),lbl:'APTC + CSR silver'};}
+  if(pct<=400){const s=Math.max(0,(400-pct)/(400-250))*.55;return{net:Math.round(gross*(1-s)),lbl:'APTC (federal only)'};}
+  if(pct<=500)return{net:Math.round(gross*.90),lbl:'CT 50% replacement'};
+  return{net:gross,lbl:'No subsidy'};
+}
+
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+const RATES=[50,60,70,75,80,90,100,120,140,160,180,200];
+let selRate=120;
+
+function getBudget(){return+document.getElementById('budget').value;}
+function getRunway(){return+document.getElementById('runway').value;}
+function getBD(){return+document.getElementById('billdays').value;}
+function getPrem(){return+document.getElementById('premium').value;}
+function annG(r){return r*8*getBD()*12;}
+
+function calcRw(moNet){
+  const b=getBudget(),p=getPrem(),rw=getRunway(),sp=moNet-p,sur=sp-b;
+  if(sp>=b)return{mo:Infinity,sur,sp};
+  if(sp<=0)return{mo:rw/b,sur,sp};
+  return{mo:rw/(b-sp),sur,sp};
+}
+function rstripH(moNet,lbl){
+  const{mo,sur,sp}=calcRw(moNet);
+  const cls=mo===Infinity?'ok':mo>=6?'ok':mo>=3?'warn':'bad';
+  const ml=mo===Infinity?'Self-sustaining':mo.toFixed(1)+' mo runway';
+  const sl=sur>=0?'+'+fmt(sur)+'/mo surplus':fmt(sur)+'/mo shortfall';
+  return`<div class="rstrip ${cls}"><div><div class="rl">${lbl} — runway</div><div class="rs">${sl} · ${fmt(sp)}/mo spendable</div></div><div class="rm">${ml}</div></div>`;
+}
+
+function buildTicks(){
+  const track=document.getElementById('tick-track');
+  const max=4500;
+  const ticks=[{val:0,lbl:'Medicaid\n$0'}];
+  PLANS.filter(p=>p.id!=='medicaid').forEach(p=>{
+    ticks.push({val:p.fam,lbl:p.car+'\n'+p.nm+'\n'+fmt(p.fam)});
+  });
+  // dedupe ticks within $75 of each other
+  const dd=[];
+  ticks.forEach(t=>{if(!dd.length||Math.abs(t.val-dd[dd.length-1].val)>75)dd.push(t);});
+  track.innerHTML='';
+  dd.forEach(t=>{
+    const pct=Math.min(99,(t.val/max)*100);
+    const d=document.createElement('div');
+    d.className='tick';d.style.left=pct+'%';
+    d.innerHTML='<div class="tick-line"></div><div class="tick-lbl">'+t.lbl.replace(/\n/g,'<br>')+'</div>';
+    const v=t.val;d.onclick=()=>snapPrem(v);
+    track.appendChild(d);
+  });
+  updTicks();
+}
+
+function snapPrem(val){
+  const el=document.getElementById('premium');
+  el.value=Math.min(4500,Math.round(val/25)*25);
+  document.getElementById('premium-out').textContent='$'+Math.round(el.value).toLocaleString();
+  const m=PLANS.find(p=>p.id==='medicaid'&&val===0)||PLANS.find(p=>Math.abs(p.fam-val)<75);
+  if(m)selPlan(m.id,false);
+  updTicks();render();
+}
+function updTicks(){
+  const val=getPrem();
+  document.querySelectorAll('#tick-track .tick').forEach(t=>{
+    const lbl=t.querySelector('.tick-lbl').innerText;
+    const numMatch=lbl.match(/\$([0-9,]+)/);
+    const tickVal=numMatch?parseInt(numMatch[1].replace(/,/g,''),10):0;
+    const isZero=lbl.includes('Medicaid')&&val===0;
+    t.classList.toggle('active',isZero||(tickVal>0&&Math.abs(tickVal-val)<75));
+  });
+}
+
+function selPlan(id,updateSlider=true){
+  selPlanId=id;
+  const plan=PLANS.find(p=>p.id===id);
+  if(updateSlider&&plan){
+    const el=document.getElementById('premium');
+    el.value=plan.fam;
+    document.getElementById('premium-out').textContent='$'+plan.fam.toLocaleString();
+    updTicks();
+  }
+  const badge=document.getElementById('sel-badge');
+  if(plan&&plan.id!=='medicaid')
+    badge.textContent='Selected: '+plan.car+' '+plan.nm+' — '+fmt(plan.fam)+'/mo family (unsubsidized). See AH CT Plans tab for income-adjusted premium.';
+  else if(plan)
+    badge.textContent='Selected: Medicaid / Covered CT — $0 premium while income-eligible.';
+  else
+    badge.textContent='';
+  render();
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('[onclick="switchTab(\''+name+'\')"]').classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  render();
+}
+function selRate2(r){selRate=r;document.getElementById('rate-toggles').innerHTML=rateHtml();renderScenarios();}
+function rateHtml(){return RATES.map(r=>'<button class="tbtn'+(r===selRate?' active':'')+'" onclick="selRate2('+r+')">'+r+'/hr</button>').join('');}
+
+function renderTopCards(){
+  const b=getBudget(),rw=getRunway(),bd=getBD(),p=getPrem(),ann=annG(selRate);
+  const bo=rw/b,w2r=calcRw(calcW2(ann).net/12),r9r=calcRw(calc1099(ann,p*12).net_cash/12);
+  const fr=(mo)=>mo===Infinity?'∞':'~'+mo.toFixed(1)+' mo';
+  document.getElementById('top-cards').innerHTML=
+    '<div class="card"><div class="card-lbl">Runway (no contract)</div><div class="card-val '+(bo<3?'bad':bo<5?'warn':'ok')+'">'+bo.toFixed(1)+' mo</div><div class="card-sub">burning '+fmt(b)+'/mo</div></div>'+
+    '<div class="card"><div class="card-lbl">W2 runway @ $'+selRate+'/hr</div><div class="card-val '+(w2r.mo===Infinity?'ok':w2r.mo<3?'bad':w2r.mo<5?'warn':'ok')+'">'+fr(w2r.mo)+'</div><div class="card-sub">'+(w2r.sur>=0?'+'+fmt(w2r.sur):fmt(w2r.sur))+'/mo</div></div>'+
+    '<div class="card"><div class="card-lbl">1099 runway @ $'+selRate+'/hr</div><div class="card-val '+(r9r.mo===Infinity?'ok':r9r.mo<3?'bad':r9r.mo<5?'warn':'ok')+'">'+fr(r9r.mo)+'</div><div class="card-sub">'+(r9r.sur>=0?'+'+fmt(r9r.sur):fmt(r9r.sur))+'/mo</div></div>'+
+    '<div class="card"><div class="card-lbl">Premium input</div><div class="card-val">'+(p===0?'$0':fmt(p)+'/mo')+'</div><div class="card-sub">'+(p===0?'Medicaid / no cost':'per month')+'</div></div>';
+}
+
+function renderScenarios(){
+  const rate=selRate,bd=getBD(),budget=getBudget(),p=getPrem(),ann=annG(rate);
+  const w2=calcW2(ann),r9=calc1099(ann,p*12);
+  const mW=w2.net/12,m9=r9.net_cash/12,mWn=mW-p,m9n=m9-p;
+  const dss=rate*8*bd*12>FPL2*1.38&&p===0;
+  let verd='';
+  if(m9n>=budget&&mWn>=budget)verd='<div class="vbox ok">Both structures clear your '+fmt(budget)+'/mo floor at $'+rate+'/hr.</div>';
+  else if(m9n<budget&&mWn>=budget)verd='<div class="vbox warn">W2 clears your floor; 1099 doesn\'t after the '+fmt(p)+'/mo premium. Push the 1099 rate up.</div>';
+  else if(m9n<budget&&mWn<budget)verd='<div class="vbox bad">Neither clears '+fmt(budget)+'/mo at $'+rate+'/hr, '+bd+' billing days, and '+fmt(p)+'/mo in premiums.</div>';
+  else verd='<div class="vbox info">1099 clears the floor after premiums; W2 doesn\'t. Push the W2 rate up before accepting.</div>';
+  const dssH=dss?'<div class="vbox warn"><strong>DSS income trap:</strong> '+bd+' days × $'+rate+'/hr annualizes to '+fmt(rate*8*bd*12)+'/yr — above Husky A limit (~'+fmt(FPL2*1.38)+'). DSS uses current monthly income. One invoice can trigger Medicaid loss even on a short contract.</div>':'';
+  const ye='<div class="yeblk"><div class="yelbl">Year-end adjustments — not spendable until you file</div>'+
+    '<div class="yer"><span>SE tax deduction saves</span><span>+'+fmt(r9.se_s)+'/yr</span></div>'+
+    (p>0?'<div class="yer"><span>Health premium deduction saves</span><span>+'+fmt(r9.h_s)+'/yr</span></div>':'')+
+    '<div class="yet"><span>Total year-end benefit</span><span>~+'+fmt(r9.ye/12)+'/mo equiv</span></div>'+
+    '<div style="font-size:10px;color:#9a9a96;margin-top:4px">Reduces tax bill or produces refund at filing. Not available for this month\'s bills.</div></div>';
+  const sc=(title,net,netAfter,fica,fed,ct,se,isRec,extraRows,showYe)=>{
+    const cls=netAfter>=budget?'ok':netAfter>=budget*.8?'warn':'bad';
+    return '<div class="sc'+(isRec?' rec':'')+'">'+
+      (isRec?'<span class="sc-badge">clears floor</span>':'')+
+      '<div class="sc-ttl">'+title+'</div>'+
+      '<div class="sr"><span>Gross/yr</span><span>'+fmt(ann)+'</span></div>'+
+      (fica?'<div class="sr"><span>FICA (employee half)</span><span>−'+fmt(fica)+'</span></div>':'')+
+      (se?'<div class="sr"><span>SE tax (15.3%)</span><span>−'+fmt(se)+'</span></div>':'')+
+      '<div class="sr"><span>Federal income tax</span><span>−'+fmt(fed)+'</span></div>'+
+      '<div class="sr"><span>CT state tax</span><span>−'+fmt(ct)+'</span></div>'+
+      (p>0?'<div class="sr dim"><span>Health premium</span><span>−'+fmt(p*12)+'/yr</span></div>':'')+
+      (extraRows||'')+
+      '<div class="sdiv"></div>'+
+      '<div class="sr"><span>Net/yr</span><span>'+fmt(net*12)+'</span></div>'+
+      '<div class="snet '+cls+'">'+fmt(net)+'/mo gross</div>'+
+      '<div class="snet-sub">'+fmt(netAfter)+'/mo after '+fmt(p)+'/mo premium</div>'+
+      rstripH(net,title.split('—')[0].trim())+
+      (showYe?ye:'')+
+      '</div>';
+  };
+  document.getElementById('scenario-out').innerHTML=verd+dssH+
+    '<div class="sc-grid">'+
+    sc('W2 — $'+rate+'/hr',mW,mWn,w2.fica,w2.fed,w2.ct,0,mWn>=budget,'',false)+
+    sc('1099 — $'+rate+'/hr',m9,m9n,0,r9.fed,r9.ct,r9.se,m9n>=budget,'',true)+
+    '</div>'+
+    '<div class="note">W2: employee FICA 7.65%. 1099: SE tax on 92.35% of gross; income tax after half-SE deduction (cash basis). Year-end shown separately. CT 2–6.99%, federal 10–37%. Estimates — consult a CPA.</div>';
+}
+
+function renderHealth(){
+  const ann=annG(selRate),bd=getBD(),rate=selRate;
+  const tierBadge={medicaid:'tier-medicaid',bronze:'tier-bronze',silver:'tier-silver',gold:'tier-gold'};
+
+  const planHtml=PLANS.map(plan=>{
+    const sub=plan.id==='medicaid'?{net:0,lbl:'Income-based — see bands below'}:applySubsidy(plan.fam,ann);
+    const net=sub.net,saving=plan.fam-net,isSel=selPlanId===plan.id,hasSub=saving>0&&plan.id!=='medicaid';
+    return '<div class="plan-card'+(isSel?' selected':'')+'" id="pc-'+plan.id+'">'+
+      '<span class="plan-tier '+tierBadge[plan.tier]+'">'+plan.tier.toUpperCase()+'</span>'+
+      (hasSub?'<span class="subsidy-badge">'+sub.lbl+'</span>':'')+
+      '<div class="plan-name">'+plan.car+' '+plan.nm+'</div>'+
+      '<div class="plan-prem" style="color:'+(plan.id==='medicaid'?'#16a34a':'#1a1a18')+'">'+
+        (net===0?'$0':fmt(net))+'<span style="font-size:11px;color:#6b6b67;margin-left:3px">/mo'+(hasSub?' (after subsidy)':'')+'</span></div>'+
+      (hasSub?'<div style="font-size:11px;color:#6b6b67;margin-bottom:.3rem">Full price: '+fmt(plan.fam)+'/mo · Savings: '+fmt(saving)+'/mo</div>':'')+
+      '<div style="font-size:11px;color:#6b6b67;margin-bottom:.3rem">Age 61: '+fmt(plan.py)+' · Age 54: '+fmt(plan.pw)+' · Age 14: '+fmt(plan.pk)+' /mo each</div>'+
+      '<div class="plan-row"><span>Deductible</span><span>'+(plan.ded===0?'$0':fmt(plan.ded))+'</span></div>'+
+      '<div class="plan-row"><span>OOP max (per person)</span><span>'+(plan.oop===0?'$0':fmt(plan.oop))+'</span></div>'+
+      '<div class="plan-note">'+plan.note+'</div>'+
+      '<button class="plan-select-btn" onclick="selPlan(\''+plan.id+'\')">'+(isSel?'✓ Using this premium':'Use this plan\'s premium')+'</button>'+
+      '</div>';
+  }).join('');
+
+  const bands=[
+    {p:'≤138%',l:'Husky A (Medicaid)',t:'≤'+fmt(FPL2*1.38)+'/yr',c:'#16a34a',n:'$0 everything. DSS uses current monthly income annualized — one high contract month can disqualify you even if annual income stays low. Loss of Husky opens a 60-day ACA enrollment window.'},
+    {p:'138–175%',l:'Covered CT',t:fmt(FPL2*1.38)+'–'+fmt(FPL2*1.75)+'/yr',c:'#0d9488',n:'$0 premium, $0 deductible, $0 copays on Silver. State pays everything including dental. Apply through Access Health CT — not automatic on losing Medicaid.'},
+    {p:'175–200%',l:'APTC + CT full replacement',t:fmt(FPL2*1.75)+'–'+fmt(FPL2*2.0)+'/yr',c:'#2563eb',n:'CT 2026 Temporary Premium Assistance replaces 100% of expired enhanced federal credits. Net premium near $0–100/mo. Call 1-855-805-4325 — not yet reflected in online shopping.'},
+    {p:'200–250%',l:'APTC + CSR silver',t:fmt(FPL2*2.0)+'–'+fmt(FPL2*2.5)+'/yr',c:'#7c3aed',n:'Federal APTC + cost-sharing reductions. Must choose Silver tier. Deductible can drop dramatically — critical for a family with biologic and psych prescriptions.'},
+    {p:'250–400%',l:'APTC only (federal)',t:fmt(FPL2*2.5)+'–'+fmt(FPL2*4.0)+'/yr',c:'#d97706',n:'Federal credits only, no CSR. Standard deductibles apply. Subsidy cliff at 400% FPL — above that, no federal help.'},
+    {p:'400–500%',l:'CT 50% replacement only',t:fmt(FPL2*4.0)+'–'+fmt(FPL2*5.0)+'/yr',c:'#ea580c',n:'CT Temporary Premium Assistance covers 50% of expired enhanced credits. 2026 only — not guaranteed to continue next year.'},
+    {p:'>500%',l:'No subsidy — full market',t:'Above '+fmt(FPL2*5.0)+'/yr',c:'#dc2626',n:'Full unsubsidized family premiums shown in plan cards above. Family of 3 can exceed $3,500–4,000+/mo at Gold tier.'},
+  ];
+  const bandsHtml=bands.map(b=>'<div class="band-row"><div class="band-sw" style="background:'+b.c+'"></div><div class="band-body"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:2px"><span class="band-ttl">'+b.l+'</span><span style="font-size:11px;color:#6b6b67">'+b.p+' FPL · '+b.t+'</span></div><div class="band-sub">'+b.n+'</div></div></div>').join('');
+
+  document.getElementById('health-out').innerHTML=
+    '<div class="st">AH CT plan premiums — family ages 61, 54 &amp; 14</div>'+
+    '<div class="vbox info" style="margin-bottom:.75rem">Showing premiums at <strong>$'+rate+'/hr · '+bd+' billing days/mo · '+fmt(ann)+'/yr gross</strong>. Subsidies estimated at that income. Change rate or billing days to see how your subsidy band shifts. Click "Use this plan\'s premium" to send it to the main calculator.</div>'+
+    '<div class="vbox warn" style="margin-bottom:.75rem"><strong>Important — your wife\'s prescriptions:</strong> Biologic medications ($10k–$50k+/yr list price) and multiple psych medications make plan tier choice critical. On a Bronze plan you would owe the full deductible ($6,250–$7,000) before drug coverage kicks in. Silver CSR or Gold tiers almost certainly minimize total annual spend. Verify the formulary and tier placement of each medication at the carrier\'s website before selecting a plan.</div>'+
+    '<div class="plan-grid">'+planHtml+'</div>'+
+    '<div class="st" style="margin-top:1.25rem">CT income &amp; subsidy bands (household of 2–3)</div>'+
+    bandsHtml+
+    '<div class="note">Age multipliers: CMS federal standard curve. Base premiums: 2026 CT individual market unsubsidized rates for age 40, scaled by CMS age multipliers for ages 61, 54, and 14. Family premium = sum of each member\'s individual premium. Subsidy estimates are approximations — actual subsidies depend on household MAGI, filing status, and plan selection. Verify at accesshealthct.com or call 1-855-805-4325. Not a benefits quote.</div>';
+}
+
+function renderNegotiate(){
+  const bd=getBD(),budget=getBudget(),p=getPrem(),rw=getRunway();
+  const rows=RATES.map(r=>{
+    const ann=r*8*bd*12,w2=calcW2(ann),r9=calc1099(ann,p*12);
+    const mWn=w2.net/12-p,m9n=r9.net_cash/12-p;
+    const wr=calcRw(w2.net/12),r9r=calcRw(r9.net_cash/12);
+    const fr=(mo)=>mo===Infinity?'∞':mo<=0?'0':mo.toFixed(1)+' mo';
+    const cls=mWn>=budget?'good':mWn>=budget*.8?'warn':'bad';
+    return '<tr><td style="font-weight:500">$'+r+'/hr</td><td>'+fmt(mWn)+'</td><td>'+fmt(m9n)+'</td>'+
+      '<td style="color:#16a34a;font-size:11px">+'+fmt(r9.ye/12)+'/mo</td>'+
+      '<td>'+fr(wr.mo)+'</td><td>'+fr(r9r.mo)+'</td>'+
+      '<td><span class="pill '+cls+'">'+(mWn>=budget?'yes':'no')+'</span></td></tr>';
+  }).join('');
+  document.getElementById('negotiate-out').innerHTML=
+    '<div class="st">All rates — '+bd+' billing days/mo · '+fmt(p)+'/mo premium · '+fmt(budget)+'/mo floor</div>'+
+    '<div style="overflow-x:auto"><table class="ntable"><thead><tr>'+
+    '<th>Rate</th><th>W2 net/mo<br><span style="font-weight:400">after premium</span></th>'+
+    '<th>1099 cash/mo<br><span style="font-weight:400">after premium</span></th>'+
+    '<th>1099 year-end<br><span style="font-weight:400">not spendable now</span></th>'+
+    '<th>W2 runway</th><th>1099 runway</th><th>W2 clears '+fmt(budget)+'?</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="mini-cards">'+
+    '<div class="mini-card"><div class="mini-lbl">1099 premium over W2</div><div class="mini-val">~20–30%</div><div class="mini-sub">to match same take-home</div></div>'+
+    '<div class="mini-card"><div class="mini-lbl">Set aside from invoice</div><div class="mini-val">~30–33%</div><div class="mini-sub">taxes before spending</div></div>'+
+    '<div class="mini-card"><div class="mini-lbl">Medicaid cliff (2-person)</div><div class="mini-val">'+fmt(FPL2*1.38)+'/yr</div><div class="mini-sub">~'+fmt(FPL2*1.38/12)+'/mo gross</div></div>'+
+    '<div class="mini-card"><div class="mini-lbl">Covered CT ceiling</div><div class="mini-val">'+fmt(FPL2*1.75)+'/yr</div><div class="mini-sub">$0 premium up to here</div></div>'+
+    '<div class="mini-card"><div class="mini-lbl">Non-billable overhead</div><div class="mini-val">'+((22-bd)/22*100).toFixed(0)+'%</div><div class="mini-sub">at '+bd+' days/mo</div></div>'+
+    '<div class="mini-card"><div class="mini-lbl">Current premium</div><div class="mini-val">'+fmt(p)+'/mo</div><div class="mini-sub">'+fmt(p*12)+'/yr out of pocket</div></div>'+
+    '</div>'+
+    '<div class="vbox warn" style="margin-top:1rem"><strong>Short contract DSS trap:</strong> Most rates here annualize above the Medicaid threshold. A single 1099 invoice can trigger Medicaid loss mid-month. Push for W2 on short contracts so benefits are the employer\'s problem, or price the rate high enough that ACA premiums are painless.</div>'+
+    '<div class="vbox neutral" style="margin-top:.75rem"><strong>W2 with employer benefits:</strong> Go to the AH CT Plans tab, find the tier that matches what\'s offered, then set the premium slider to your employee share of the deduction. Compare that directly in this table.</div>'+
+    '<div class="note" style="margin-top:.75rem">Runway = months until '+fmt(rw)+' exhausted at monthly deficit. ∞ = self-sustaining. Not tax or legal advice.</div>';
+}
+
+function render(){
+  renderTopCards();
+  const active=document.querySelector('.panel.active').id.replace('panel-','');
+  if(active==='scenarios')renderScenarios();
+  else if(active==='health')renderHealth();
+  else if(active==='negotiate')renderNegotiate();
+}
+
+['budget','runway','billdays'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    const v=+document.getElementById(id).value;
+    document.getElementById(id+'-out').textContent=id==='billdays'?v+' days':'$'+v.toLocaleString();
+    render();
+  });
+});
+document.getElementById('premium').addEventListener('input',()=>{
+  const v=+document.getElementById('premium').value;
+  document.getElementById('premium-out').textContent='$'+v.toLocaleString();
+  if(selPlanId){const pl=PLANS.find(p=>p.id===selPlanId);if(pl&&Math.abs(pl.fam-v)>100){selPlanId=null;document.getElementById('sel-badge').textContent='';}}
+  updTicks();render();
+});
+
+document.getElementById('rate-toggles').innerHTML=rateHtml();
+buildTicks();
+render();
+</script>
+</body>
+</html>
